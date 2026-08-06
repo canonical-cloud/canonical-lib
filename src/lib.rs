@@ -160,7 +160,10 @@ impl Display for ValidationError {
                 formatter.write_str("database context record is required")
             }
             Self::ContextTooLarge { actual, maximum } => {
-                write!(formatter, "analysis context is {actual} bytes; maximum is {maximum}")
+                write!(
+                    formatter,
+                    "analysis context is {actual} bytes; maximum is {maximum}"
+                )
             }
         }
     }
