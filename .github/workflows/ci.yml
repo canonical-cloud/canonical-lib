@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canonical-lib-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate package graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          manifest = tomllib.loads(Path('.zpkg.toml').read_text())
+          assert manifest['package']['name'] == 'canonical-lib'
+          assert set(manifest['dependencies']) == {'canonical-cloud/canonical-interfaces'}
+          assert Path('.zpkg.lock').read_text() == 'version = 1\n'
+          PY
+
+      - name: Format, test, and lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --all -- --check
+          cargo test --all-targets --locked
+          cargo clippy --all-targets --locked -- -D warnings
