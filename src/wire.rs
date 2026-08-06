@@ -58,19 +58,16 @@ const REVENUE_BANDS: &[&str] = &[
 /// Validate the current generated quote contract without copying transport
 /// structs into this crate. Errors identify only the field, never its value.
 pub fn validate_wire_quote(request: &interfaces::QuoteRequest) -> Result<(), WireValidationError> {
-    validate_text(
-        "organizationName",
-        &request.organization_name,
-        1,
-        200,
-    )?;
+    validate_text("organizationName", &request.organization_name, 1, 200)?;
     validate_text("contactName", &request.contact_name, 1, 160)?;
     if !is_reasonable_email(&request.contact_email) {
         return Err(WireValidationError::InvalidField("contactEmail"));
     }
-    if request.website.as_deref().is_some_and(|website| {
-        char_count(website) > 2_048 || !is_public_website(website)
-    }) {
+    if request
+        .website
+        .as_deref()
+        .is_some_and(|website| char_count(website) > 2_048 || !is_public_website(website))
+    {
         return Err(WireValidationError::InvalidField("website"));
     }
     if !(1..=1_000_000).contains(&request.employee_count) {
@@ -216,9 +213,7 @@ fn is_iso_date(value: &str) -> bool {
     let year = value[0..4].parse::<u16>().ok();
     let month = value[5..7].parse::<u8>().ok();
     let day = value[8..10].parse::<u8>().ok();
-    matches!(year, Some(1..=9_999))
-        && matches!(month, Some(1..=12))
-        && matches!(day, Some(1..=31))
+    matches!(year, Some(1..=9_999)) && matches!(month, Some(1..=12)) && matches!(day, Some(1..=31))
 }
 
 fn is_context_key(value: &str) -> bool {
