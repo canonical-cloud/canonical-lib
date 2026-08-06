@@ -1,0 +1,33 @@
+name: generate dependency lock for review branch
+
+on:
+  push:
+    branches:
+      - agent/consume-canonical-interfaces
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canonical-lib-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Generate and print reviewed lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo generate-lockfile
+          cargo metadata --locked --format-version 1 >/dev/null
+          printf '%s\n' 'CANONICAL_LOCKFILE_BASE64_BEGIN'
+          base64 -w0 Cargo.lock
+          printf '\n%s\n' 'CANONICAL_LOCKFILE_BASE64_END'
