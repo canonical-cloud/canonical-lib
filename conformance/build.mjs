@@ -160,7 +160,10 @@ if (problems.length) {
 const corpus = {
   $comment: "Generated from conformance/cases.mjs by conformance/build.mjs. Edit cases.mjs, not this file.",
   version: 1,
-  fieldOrderSource: path.relative(path.resolve(here, "..", ".."), schemaSource),
+  // A logical identifier, deliberately not a filesystem path: the schema is read
+  // from a sibling checkout locally and a temp clone in CI, and embedding either
+  // would make the artifact non-reproducible and permanently "stale".
+  fieldOrderSource: "canonical-cloud/canonical-interfaces schema/quote.schema.json#$defs.QuoteRequest.properties",
   caseCount: cases.length,
   cases,
 };
