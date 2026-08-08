@@ -1,7 +1,7 @@
 {
   "$comment": "Generated from conformance/cases.mjs by conformance/build.mjs. Edit cases.mjs, not this file.",
   "version": 1,
-  "fieldOrderSource": "canonical-interfaces/schema/quote.schema.json",
+  "fieldOrderSource": "canonical-cloud/canonical-interfaces schema/quote.schema.json#$defs.QuoteRequest.properties",
   "caseCount": 60,
   "cases": [
     {

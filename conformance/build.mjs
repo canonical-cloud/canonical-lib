@@ -12,7 +12,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { CASES, VALID, CANARIES } from "./cases.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -30,9 +30,9 @@ function loadFieldOrder() {
     const p = path.join(dir, "schema", "quote.schema.json");
     if (!fs.existsSync(p)) continue;
     const defs = JSON.parse(fs.readFileSync(p, "utf8")).$defs.QuoteRequest;
-    return { order: Object.keys(defs.properties), source: p };
+    return { order: Object.keys(defs.properties) };
   }
-  return { order: null, source: null };
+  return { order: null };
 }
 
 const VOCABULARY = {
@@ -53,7 +53,7 @@ const scalarLength = (s) => [...s].length;
 const problems = [];
 const fail = (caseName, msg) => problems.push(`${caseName}: ${msg}`);
 
-const { order: FIELD_ORDER, source: schemaSource } = loadFieldOrder();
+const { order: FIELD_ORDER } = loadFieldOrder();
 if (!FIELD_ORDER) {
   console.error(
     "error: canonical-interfaces checkout not found; set CANONICAL_INTERFACES_DIR.\n" +
