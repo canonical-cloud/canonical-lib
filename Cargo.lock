@@ -16,6 +16,8 @@ name = "canonical-lib"
 version = "0.1.0"
 dependencies = [
  "canonical-interfaces",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
