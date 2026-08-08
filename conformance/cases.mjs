@@ -87,8 +87,9 @@ export const CASES = [
   bad("contactEmail/empty-local", { contactEmail: "@northwind.example" }, e("contactEmail", "malformed")),
   bad("contactEmail/domain-without-dot", { contactEmail: "ada@northwind" }, e("contactEmail", "malformed")),
   bad("contactEmail/inner-whitespace", { contactEmail: "ada l@northwind.example" }, e("contactEmail", "malformed")),
-  bad("contactEmail/too-long", { contactEmail: `${"a".repeat(310)}@x.example` },
-    e("contactEmail", "too_long", { limit: 320, actual: 320 + 1 })),
+  // 311 + "@x.example" (10) = 321, one past the limit.
+  bad("contactEmail/too-long", { contactEmail: `${"a".repeat(311)}@x.example` },
+    e("contactEmail", "too_long", { limit: 320, actual: 321 })),
 
   // --- website (optional) ---------------------------------------------------
   bad("website/no-scheme", { website: "northwind.example" }, e("website", "malformed")),
