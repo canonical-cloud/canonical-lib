@@ -42,3 +42,32 @@ jobs:
           cargo fmt --all -- --check
           cargo test --all-targets --locked
           cargo clippy --all-targets --locked -- -D warnings
+
+      # The corpus is the only thing keeping three peer implementations in
+      # agreement, so a stale or self-inconsistent one has to fail the build.
+      # Field order and field names are read from canonical-interfaces at the
+      # revision this crate pins, so the corpus cannot drift from the contract.
+      - name: Check out the pinned canonical-interfaces revision
+        id: interfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          rev="$(sed -n 's/.*canonical-interfaces.*rev = "\([0-9a-f]\{40\}\)".*/\1/p' Cargo.toml | head -1)"
+          if [[ -z "$rev" ]]; then
+            echo "::error file=Cargo.toml::could not read the pinned canonical-interfaces revision"
+            exit 1
+          fi
+          echo "rev=$rev" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: canonical-cloud/canonical-interfaces
+          ref: ${{ steps.interfaces.outputs.rev }}
+          path: .interfaces
+          persist-credentials: false
+
+      - name: Validate the conformance corpus
+        shell: bash
+        env:
+          CANONICAL_INTERFACES_DIR: ${{ github.workspace }}/.interfaces
+        run: node conformance/build.mjs --check
