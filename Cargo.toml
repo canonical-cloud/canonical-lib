@@ -11,7 +11,7 @@ repository = "https://github.com/canonical-cloud/canonical-lib"
 path = "src/root.rs"
 
 [dependencies]
-canonical-interfaces = { version = "=0.1.0", git = "https://github.com/canonical-cloud/canonical-interfaces", rev = "ec2c739092c955e4756d2d692ef225adf67647e4" }
+canonical-interfaces = { version = "=0.1.0", git = "https://github.com/canonical-cloud/canonical-interfaces", rev = "4c6ca63ca24fa214a1cb1a917ac27f1d5265916a" }
 
 [lints.rust]
 unsafe_code = "forbid"

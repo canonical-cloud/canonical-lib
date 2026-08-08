@@ -9,4 +9,4 @@ pub use domain::*;
 pub use wire::{validate_wire_quote, WireValidationError};
 
 /// Immutable `canonical-interfaces` revision used by this Cargo build.
-pub const INTERFACES_REVISION: &str = "ec2c739092c955e4756d2d692ef225adf67647e4";
+pub const INTERFACES_REVISION: &str = "4c6ca63ca24fa214a1cb1a917ac27f1d5265916a";
