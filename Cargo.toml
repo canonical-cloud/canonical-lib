@@ -8,7 +8,12 @@ license = "MIT"
 repository = "https://github.com/canonical-cloud/canonical-lib"
 
 [lib]
-path = "src/lib.rs"
+path = "src/root.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+canonical-interfaces = { version = "=0.1.0", git = "https://github.com/canonical-cloud/canonical-interfaces", rev = "4c6ca63ca24fa214a1cb1a917ac27f1d5265916a" }
 
 [lints.rust]
 unsafe_code = "forbid"
