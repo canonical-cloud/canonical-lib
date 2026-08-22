@@ -391,7 +391,6 @@ mod tests {
             Err(WireValidationError::DuplicateItem("infrastructure"))
         );
     }
-
     /// The pinned revision is written in two places — `Cargo.toml` and
     /// `INTERFACES_REVISION` — and a bump that updates one but not the other
     /// would leave the constant lying about what this build resolved. The
