@@ -6,6 +6,8 @@
 //! submitted value.
 
 use std::collections::HashSet;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 
 use crate::interfaces;
 use crate::issue::{Issue, IssueKind, Outcome};
@@ -305,10 +307,90 @@ fn is_context_key(value: &str) -> bool {
         })
 }
 
+/// Preserve the original fail-fast API for downstream callers while using the
+/// conformance validator as the single source of validation truth.
+///
+/// The compatibility result reports the first issue in schema order and retains
+/// the original duplicate-item distinction. New callers should prefer
+/// `validate_quote_request` to receive the complete structured outcome.
+pub fn validate_wire_quote(request: &interfaces::QuoteRequest) -> Result<(), WireValidationError> {
+    let outcome = validate_quote_request(request);
+    match outcome.0.first() {
+        None => Ok(()),
+        Some(Issue {
+            field,
+            kind: IssueKind::Duplicate,
+        }) => Err(WireValidationError::DuplicateItem(field)),
+        Some(issue) => Err(WireValidationError::InvalidField(issue.field)),
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WireValidationError {
+    InvalidField(&'static str),
+    DuplicateItem(&'static str),
+}
+
+impl Display for WireValidationError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidField(field) => write!(formatter, "invalid wire field: {field}"),
+            Self::DuplicateItem(field) => {
+                write!(formatter, "duplicate item in wire field: {field}")
+            }
+        }
+    }
+}
+
+impl Error for WireValidationError {}
+
 #[cfg(test)]
 mod tests {
-    use crate::INTERFACES_REVISION;
+    use super::{validate_wire_quote, WireValidationError};
+    use crate::{interfaces, INTERFACES_REVISION};
 
+    fn valid_wire_request() -> interfaces::QuoteRequest {
+        interfaces::QuoteRequest {
+            organization_name: "Example Incorporated".into(),
+            contact_name: "Jordan Example".into(),
+            contact_email: "jordan@example.com".into(),
+            website: Some("https://example.com".into()),
+            employee_count: 42,
+            annual_revenue_band: Some("1m_10m".into()),
+            frameworks: vec!["soc2_type_2".into(), "iso_27001".into()],
+            current_stage: "readiness".into(),
+            infrastructure: vec!["aws".into(), "supabase".into()],
+            data_sensitivity: vec!["confidential".into(), "pii".into()],
+            target_date: Some("2027-01-15".into()),
+            has_security_program: true,
+            has_policies: true,
+            has_risk_assessment: false,
+            has_incident_response_plan: true,
+            has_vendor_management: false,
+            notes: Some("Initial readiness estimate".into()),
+            context_key: Some("quote.default-v1".into()),
+            answers_version: 1,
+        }
+    }
+
+    #[test]
+    fn compatibility_validator_uses_the_conformance_result() {
+        assert_eq!(validate_wire_quote(&valid_wire_request()), Ok(()));
+
+        let mut invalid = valid_wire_request();
+        invalid.organization_name.clear();
+        invalid.infrastructure.push("aws".into());
+        assert_eq!(
+            validate_wire_quote(&invalid),
+            Err(WireValidationError::InvalidField("organizationName"))
+        );
+
+        invalid.organization_name = "Example Incorporated".into();
+        assert_eq!(
+            validate_wire_quote(&invalid),
+            Err(WireValidationError::DuplicateItem("infrastructure"))
+        );
+    }
     /// The pinned revision is written in two places — `Cargo.toml` and
     /// `INTERFACES_REVISION` — and a bump that updates one but not the other
     /// would leave the constant lying about what this build resolved. The
