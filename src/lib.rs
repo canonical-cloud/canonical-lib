@@ -7,7 +7,10 @@ use std::fmt::{Display, Formatter};
 /// The Zed package that owns generated wire-format contracts.
 pub const INTERFACES_PACKAGE: &str = "canonical-cloud/canonical-interfaces";
 
-/// Compliance programs that can influence a quote.
+/// Readiness programs a client can prepare for. canonical.plus prepares
+/// clients for independent review against these frameworks; formal
+/// determinations are made by independent auditors, assessors, and
+/// regulators, never by canonical.plus itself.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Framework {
     Soc2,
@@ -16,10 +19,37 @@ pub enum Framework {
     Hipaa,
     Iso27001,
     PciDss,
+    CisControls,
+    Cmmc,
+    CsaCcm,
+    Dora,
+    FedRamp,
+    Iso22301,
+    Iso27701,
+    Nis2,
     Custom,
 }
 
 impl Framework {
+    /// Every framework variant, for iteration and round-trip checks.
+    pub const ALL: [Self; 15] = [
+        Self::Soc2,
+        Self::NistCsf,
+        Self::Nist80053,
+        Self::Hipaa,
+        Self::Iso27001,
+        Self::PciDss,
+        Self::CisControls,
+        Self::Cmmc,
+        Self::CsaCcm,
+        Self::Dora,
+        Self::FedRamp,
+        Self::Iso22301,
+        Self::Iso27701,
+        Self::Nis2,
+        Self::Custom,
+    ];
+
     #[must_use]
     pub const fn as_slug(self) -> &'static str {
         match self {
@@ -29,12 +59,44 @@ impl Framework {
             Self::Hipaa => "hipaa",
             Self::Iso27001 => "iso-27001",
             Self::PciDss => "pci-dss",
+            Self::CisControls => "cis-controls",
+            Self::Cmmc => "cmmc",
+            Self::CsaCcm => "csa-ccm",
+            Self::Dora => "dora",
+            Self::FedRamp => "fedramp",
+            Self::Iso22301 => "iso-22301",
+            Self::Iso27701 => "iso-27701",
+            Self::Nis2 => "nis2",
             Self::Custom => "custom",
+        }
+    }
+
+    /// Inverse of [`Framework::as_slug`]. Accepts exactly the slugs that
+    /// `as_slug` produces; anything else returns `None`.
+    #[must_use]
+    pub fn from_slug(slug: &str) -> Option<Self> {
+        match slug {
+            "soc2" => Some(Self::Soc2),
+            "nist-csf" => Some(Self::NistCsf),
+            "nist-800-53" => Some(Self::Nist80053),
+            "hipaa" => Some(Self::Hipaa),
+            "iso-27001" => Some(Self::Iso27001),
+            "pci-dss" => Some(Self::PciDss),
+            "cis-controls" => Some(Self::CisControls),
+            "cmmc" => Some(Self::Cmmc),
+            "csa-ccm" => Some(Self::CsaCcm),
+            "dora" => Some(Self::Dora),
+            "fedramp" => Some(Self::FedRamp),
+            "iso-22301" => Some(Self::Iso22301),
+            "iso-27701" => Some(Self::Iso27701),
+            "nis2" => Some(Self::Nis2),
+            "custom" => Some(Self::Custom),
+            _ => None,
         }
     }
 }
 
-/// Customer characteristics used to size a compliance engagement.
+/// Customer characteristics used to size a readiness engagement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OrganizationProfile {
     pub legal_name: String,
@@ -192,6 +254,46 @@ mod tests {
     #[test]
     fn accepts_a_bounded_quote_request() {
         assert_eq!(valid_request().validate(), Ok(()));
+    }
+
+    #[test]
+    fn framework_slugs_round_trip_for_all_variants() {
+        for framework in Framework::ALL {
+            let slug = framework.as_slug();
+            assert_eq!(
+                Framework::from_slug(slug),
+                Some(framework),
+                "slug {slug} should round-trip"
+            );
+        }
+    }
+
+    #[test]
+    fn framework_slugs_are_unique() {
+        let mut seen = std::collections::HashSet::new();
+        for framework in Framework::ALL {
+            assert!(seen.insert(framework.as_slug()), "duplicate slug");
+        }
+        assert_eq!(seen.len(), Framework::ALL.len());
+    }
+
+    #[test]
+    fn from_slug_rejects_unknown_and_near_miss_slugs() {
+        for slug in [
+            "",
+            "SOC2",
+            "soc-2",
+            "nist_csf",
+            "iso27001",
+            "cis-controls-8.1",
+            "cmmc-2.0",
+            "dora-2022-2554",
+            "fedramp-rev5",
+            "nis2-2022-2555",
+            "not-a-framework",
+        ] {
+            assert_eq!(Framework::from_slug(slug), None, "slug {slug:?}");
+        }
     }
 
     #[test]
