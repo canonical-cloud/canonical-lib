@@ -51,7 +51,8 @@ EOF
   N=$(printf '%s\n' "$OUT" | grep -cF "$ORES_LINT_IMPLICIT_RETURN_MSG")
   [ "$N" = "1" ] && pass "exactly 1 implicit return detected in fixture" \
                  || fail "expected 1 implicit return in fixture, saw $N"
-  rm -rf "$T"
+  # Preserve the isolated fixture directory. Organization policy forbids
+  # automated deletion; the host's temporary-directory lifecycle owns cleanup.
 else
   echo "  skip - cargo/clippy unavailable"
 fi
@@ -67,8 +68,29 @@ if command -v node >/dev/null 2>&1; then
   else
     fail "vendored eslint plugin failed to load"
   fi
+
+  if node "$DIR/require-send.test.mjs" >/dev/null 2>&1; then
+    pass "require-send scanner fixtures"
+  else
+    fail "require-send scanner fixtures failed"
+    node "$DIR/require-send.test.mjs" 2>&1 | sed -n '1,20p' | sed 's/^/         /'
+  fi
 else
   echo "  skip - node unavailable"
+fi
+
+# --- Dart -------------------------------------------------------------------
+if command -v dart >/dev/null 2>&1 || command -v flutter >/dev/null 2>&1; then
+  pass "dart/flutter available for analyzer pass"
+else
+  echo "  skip - dart/flutter unavailable (dart.sh will no-op)"
+fi
+
+# --- Gleam ------------------------------------------------------------------
+if command -v gleam >/dev/null 2>&1; then
+  pass "gleam available for format/check pass"
+else
+  echo "  skip - gleam unavailable (gleam.sh will no-op)"
 fi
 
 [ "$FAIL" = "0" ] && echo "self-test passed" || echo "self-test FAILED"
