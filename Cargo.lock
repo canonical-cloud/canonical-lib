@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "canonical-lib"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "canonical-interfaces",
  "serde",
@@ -95,9 +95,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.3"
+version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3"
+checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
 dependencies = [
  "proc-macro2",
  "quote",

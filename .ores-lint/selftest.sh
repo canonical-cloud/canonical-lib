@@ -51,7 +51,8 @@ EOF
   N=$(printf '%s\n' "$OUT" | grep -cF "$ORES_LINT_IMPLICIT_RETURN_MSG")
   [ "$N" = "1" ] && pass "exactly 1 implicit return detected in fixture" \
                  || fail "expected 1 implicit return in fixture, saw $N"
-  rm -rf "$T"
+  # Preserve the isolated fixture directory. Organization policy forbids
+  # automated deletion; the host's temporary-directory lifecycle owns cleanup.
 else
   echo "  skip - cargo/clippy unavailable"
 fi
