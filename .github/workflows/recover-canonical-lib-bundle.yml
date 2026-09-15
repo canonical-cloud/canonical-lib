@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: recover-preserved-canonical-lib-history
@@ -17,13 +17,17 @@ jobs:
   recover:
     if: github.repository == 'canonical-cloud/canonical-lib'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - name: Check out recovery branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Verify bundle and publish collision-safe refs
+      - name: Verify bundle and collision-safe target refs
         shell: bash
         env:
           BUNDLE: .git-recovery/canonical-lib-20260806.bundle
@@ -35,6 +39,7 @@ jobs:
           git fetch "$BUNDLE" 'refs/heads/*:refs/remotes/preserved-canonical-lib/*'
 
           imported=0
+          : > "$RUNNER_TEMP/preserved-canonical-lib-refs.tsv"
           while read -r sha ref; do
             case "$ref" in
               refs/heads/*)
@@ -45,21 +50,41 @@ jobs:
                   echo "Ref collision: $target_branch already points to $existing, expected $sha" >&2
                   exit 1
                 fi
-                if [[ "$existing" == "$sha" ]]; then
-                  echo "Already published: $target_branch -> $sha"
-                else
-                  git push origin "$sha:refs/heads/$target_branch"
-                  echo "Published: $target_branch -> $sha"
-                fi
+                printf '%s\t%s\n' "$sha" "$target_branch" >> "$RUNNER_TEMP/preserved-canonical-lib-refs.tsv"
                 imported=$((imported + 1))
                 ;;
             esac
           done < <(git bundle list-heads "$BUNDLE")
 
           test "$imported" -gt 0
+
+      - name: Publish verified refs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          imported=0
+          while IFS=$'\t' read -r sha target_branch; do
+            existing="$(git ls-remote --heads origin "refs/heads/$target_branch" | awk '{print $1}')"
+            if [[ -n "$existing" && "$existing" != "$sha" ]]; then
+              echo "Ref collision appeared after verification: $target_branch -> $existing, expected $sha" >&2
+              exit 1
+            fi
+            if [[ "$existing" == "$sha" ]]; then
+              echo "Already published: $target_branch -> $sha"
+            else
+              git push origin "$sha:refs/heads/$target_branch"
+              echo "Published: $target_branch -> $sha"
+            fi
+            imported=$((imported + 1))
+          done < "$RUNNER_TEMP/preserved-canonical-lib-refs.tsv"
+
+          test "$imported" -gt 0
           {
             echo '## Preserved Git history import'
             echo
-            echo "Imported $imported branch ref(s) from \`$BUNDLE\`."
+            echo "Imported $imported branch ref(s) from the verified recovery bundle."
             echo 'Existing refs were never force-updated.'
           } >> "$GITHUB_STEP_SUMMARY"
