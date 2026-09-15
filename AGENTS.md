@@ -1,5 +1,14 @@
 # Agent instructions
 
+## Shared-history safety
+
+Preserve concurrent and reviewed work. Before synchronizing, inspect/fetch the
+remote and integrate upstream changes with `git merge` or `git pull`; do not use
+`git rebase` to rewrite shared history. Do not use `git stash` to hide work that
+may belong to another session, destructive `git reset` or `git clean`, or a
+force-push / `git push --force` to bypass review or protected-branch history.
+Use explicit additive commits and resolve conflicts semantically from both sides.
+
 ## Repository-local Git worktrees
 
 - Create or use a Git worktree only when the human operator explicitly authorizes it for the current task. Concurrency or a dirty checkout is not permission by itself.
